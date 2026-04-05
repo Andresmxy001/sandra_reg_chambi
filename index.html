@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>GlassRoom Register Cloud | Studio Visual Code</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -169,6 +169,10 @@
                     <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
                     Auditoría
                 </button>
+                <button class="tab" onclick="switchTab('admin')" id="tab-admin" style="display:none">
+                    <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4.5c1.93 0 3.5 1.57 3.5 3.5s-1.57 3.5-3.5 3.5-3.5-1.57-3.5-3.5 1.57-3.5 3.5-3.5zM12 19c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
+                    Administración
+                </button>
             </div>
 
             <!-- PANEL REGISTRO -->
@@ -217,9 +221,16 @@
                                 <div class="monto-display" id="montoDisplay">S/ 0.00</div>
                             </div>
                         </div>
-                        <div class="span2">
+                        <div>
                             <div class="fg-label">
                                 <svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+                                Fecha de Emisión
+                            </div>
+                            <input type="date" id="fechaEmision" class="fg-input">
+                        </div>
+                        <div class="span2">
+                            <div class="fg-label">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
                                 Adjuntar PDF (opcional)
                             </div>
                             <div class="pdf-upload-area" onclick="document.getElementById('pdfInput').click()">
@@ -247,10 +258,10 @@
                         <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                         <input type="text" id="searchInput" class="search-inp" placeholder="Buscar por empresa, persona o RUC..." oninput="filterRecords()">
                     </div>
-                   <button class="btn-export" onclick="downloadTemplate()">
-    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 14H7v-2h4v2zm0-4H7v-2h4v2zm0-4H7V7h4v2zm6 6h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>
-    Descargar Plantilla
-</button>
+                    <button class="btn-export" onclick="downloadTemplate()">
+                        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 14H7v-2h4v2zm0-4H7v-2h4v2zm0-4H7V7h4v2zm6 6h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>
+                        Descargar Plantilla
+                    </button>
                     <button class="btn-import" onclick="document.getElementById('excelInput').click()">
                         <svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
                         Importar Excel
@@ -277,14 +288,15 @@
                                 <th>Empresa / Persona</th>
                                 <th>Recibo</th>
                                 <th>Monto</th>
-                                <th>Fecha</th>
+                                <th>Fecha Emisión</th>
+                                <th>Fecha Registro</th>
                                 <th>Creado por</th>
                                 <th>PDF</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody"></tbody>
-                    </table>
+                    赶
                     <div id="emptyState" class="empty-state">
                         <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
                         <p>No hay registros aún. Crea tu primer registro.</p>
@@ -304,6 +316,11 @@
                             <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
                             <input type="text" id="auditSearchInput" class="search-inp" placeholder="Buscar por usuario o acción..." oninput="filterAudit()">
                         </div>
+                        <div id="auditUserFilter" style="display:none">
+                            <select id="auditUserSelect" class="fg-select" onchange="filterAuditByUser()">
+                                <option value="">Todos los usuarios</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="table-wrap">
                         <div class="loader-container" id="loaderAudit" style="display:none">
@@ -317,6 +334,7 @@
                                     <th>Acción</th>
                                     <th>Registro ID</th>
                                     <th>Detalles</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="auditTableBody"></tbody>
@@ -324,6 +342,100 @@
                         <div id="emptyAudit" class="empty-state">
                             <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
                             <p>No hay registros de auditoría</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL ADMINISTRACIÓN -->
+            <div class="panel" id="panel-admin">
+                <div class="form-card">
+                    <div class="form-card-title">
+                        <svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                        Panel de Administración
+                    </div>
+                    
+                    <!-- Gestión de Usuarios -->
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--accent2);">Gestión de Usuarios</h3>
+                        <div class="form-grid" style="margin-bottom: 1rem;">
+                            <div>
+                                <div class="fg-label">Nuevo Usuario</div>
+                                <input type="text" id="newUsername" class="fg-input" placeholder="Nombre de usuario">
+                            </div>
+                            <div>
+                                <div class="fg-label">Contraseña</div>
+                                <input type="password" id="newUserPassword" class="fg-input" placeholder="Contraseña">
+                            </div>
+                            <div>
+                                <div class="fg-label">Rol</div>
+                                <select id="newUserRole" class="fg-select">
+                                    <option value="user">Usuario Normal</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: flex-end;">
+                                <button class="btn-save" onclick="addUser()">
+                                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                    Agregar Usuario
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Usuario</th>
+                                        <th>Rol</th>
+                                        <th>Fecha Creación</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="usersTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Estadísticas del Sistema -->
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--accent2);">Estadísticas del Sistema</h3>
+                        <div class="stats-row" style="grid-template-columns: repeat(3, 1fr);">
+                            <div class="stat-card">
+                                <div class="stat-val" id="adminTotalUsers">0</div>
+                                <div class="stat-lbl">Total Usuarios</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-val" id="adminTotalRecords">0</div>
+                                <div class="stat-lbl">Registros Totales</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-val" id="adminTotalAudits">0</div>
+                                <div class="stat-lbl">Auditorías Totales</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Limpiar Auditoría -->
+                    <div>
+                        <h3 style="margin-bottom: 1rem; color: var(--coral);">Mantenimiento</h3>
+                        <div class="form-grid">
+                            <div>
+                                <div class="fg-label">Seleccionar Usuario</div>
+                                <select id="cleanAuditUser" class="fg-select">
+                                    <option value="">Todos los usuarios</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+                                <button class="btn-del" onclick="cleanAuditLogs()" style="background: rgba(248,113,113,0.2);">
+                                    <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    Limpiar Auditoría Seleccionada
+                                </button>
+                                <button class="btn-cancel" onclick="cleanAllAuditLogs()" style="background: rgba(248,113,113,0.1);">
+                                    <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                                    Limpiar Toda Auditoría
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -364,6 +476,10 @@
                         <input type="number" id="editMonto" class="fg-input" style="flex:1" oninput="updateEditMonto()">
                         <div class="monto-display" id="editMontoDisplay">S/ 0.00</div>
                     </div>
+                </div>
+                <div>
+                    <div class="fg-label">Fecha de Emisión</div>
+                    <input type="date" id="editFechaEmision" class="fg-input">
                 </div>
                 <div class="span2">
                     <div class="fg-label">Adjuntar PDF</div>
