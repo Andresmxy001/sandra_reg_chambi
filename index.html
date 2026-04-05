@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>GlassRoom Register Cloud | Studio Visual Code</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Background Animation -->
+    <div class="bg-anim">
+        <div class="orb orb1"></div>
+        <div class="orb orb2"></div>
+        <div class="orb orb3"></div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="app">
+        <div class="login-card">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <div class="logo-title">Studio Visual Code</div>
+                <div class="logo-sub">GlassRoom Register Cloud</div>
+                <div class="logo-sub" style="font-size: .7rem; color: var(--teal);">⚡ Sincronización en Tiempo Real</div>
+            </div>
+            
+            <div id="loginError" class="login-error">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                Usuario o contraseña incorrectos
+            </div>
+            
+            <div class="form-group">
+                <div class="form-label">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                    Usuario
+                </div>
+                <input type="text" id="loginUser" class="form-input" placeholder="Ingrese su usuario" autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <div class="form-label">
+                    <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.8-2.2-5-5-5S7 3.2 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.7 1.4-3.1 3.1-3.1 1.7 0 3.1 1.4 3.1 3.1v2z"/></svg>
+                    Contraseña
+                </div>
+                <div class="password-wrapper">
+                    <input type="password" id="loginPass" class="form-input" placeholder="Ingrese su contraseña">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility()">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="doLogin()">
+                <svg viewBox="0 0 24 24"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></svg>
+                Iniciar Sesión
+            </button>
+            
+            <div class="dev-contacts">
+                <div class="dev-title">
+                    <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    Contacta con el desarrollador
+                </div>
+                <div class="contact-icons">
+                    <a href="https://wa.me/51999999999?text=Hola%2C%20necesito%20soporte" target="_blank" class="contact-icon contact-whatsapp">
+                        <svg viewBox="0 0 24 24"><path d="M12.032 2.001c-5.522 0-10 4.478-10 10 0 1.752.453 3.477 1.316 5.002L2 21.999l5.093-1.336a9.97 9.97 0 0 0 4.94 1.337c5.521 0 10-4.478 10-10s-4.479-10-10-10zm0 18.4a8.34 8.34 0 0 1-4.26-1.166l-.306-.182-3.023.793.808-2.948-.199-.317A8.32 8.32 0 0 1 3.73 12.001c0-4.578 3.724-8.3 8.302-8.3 4.578 0 8.302 3.722 8.302 8.3 0 4.577-3.724 8.3-8.302 8.3zm4.55-6.216c-.248-.124-1.469-.726-1.697-.808-.227-.083-.393-.124-.558.124-.166.248-.64.808-.784.974-.145.166-.29.187-.538.062-.248-.124-1.046-.385-1.992-1.23-.736-.654-1.233-1.464-1.378-1.71-.144-.248-.016-.382.108-.505.111-.111.248-.29.372-.435.124-.145.166-.248.248-.414.083-.166.042-.31-.021-.435-.062-.124-.558-1.347-.764-1.844-.2-.483-.403-.418-.558-.426h-.476c-.166 0-.434.062-.662.31-.227.249-.868.85-.868 2.072 0 1.222.888 2.402 1.013 2.568.124.166 1.75 2.672 4.24 3.747.592.255 1.054.408 1.414.523.594.19 1.135.163 1.562.099.477-.072 1.469-.6 1.676-1.18.207-.58.207-1.077.145-1.18-.062-.104-.228-.166-.476-.29z"/></svg>
+                    </a>
+                    <a href="mailto:soporte@studiovisualcode.com" class="contact-icon contact-email">
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                    </a>
+                    <a href="tel:+51999999999" class="contact-icon contact-phone">
+                        <svg viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp" class="app">
+        <div class="topbar">
+            <div class="tb-left">
+                <div class="tb-logo">
+                    <div class="tb-logo-icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span class="tb-title">Studio Visual Code</span>
+                </div>
+            </div>
+            <div class="tb-right">
+                <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">
+                    <svg viewBox="0 0 24 24" id="themeIcon"><path d="M12 7c-2.8 0-5 2.2-5 5s2.2 5 5 5 5-2.2 5-5-2.2-5-5-5zM2 13h2c.6 0 1-.4 1-1s-.4-1-1-1H2c-.6 0-1 .4-1 1s.4 1 1 1zm18 0h2c.6 0 1-.4 1-1s-.4-1-1-1h-2c-.6 0-1 .4-1 1s.4 1 1 1zM11 2v2c0 .6.4 1 1 1s1-.4 1-1V2c0-.6-.4-1-1-1s-1 .4-1 1zm0 18v2c0 .6.4 1 1 1s1-.4 1-1v-2c0-.6-.4-1-1-1s-1 .4-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.38.39-1.02 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41.39.39 1.03.39 1.41 0l1.06-1.06z"/></svg>
+                    <span id="themeLabel">Modo día</span>
+                </button>
+                <div class="user-badge" id="userBadge">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                    <span id="currentUser">SANDRA</span>
+                </div>
+                <button class="btn-logout" onclick="doLogout()">
+                    <svg viewBox="0 0 24 24"><path d="M17 7l-1.4 1.4 2.6 2.6H8v2h10.2l-2.6 2.6L17 17l5-5-5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                    Salir
+                </button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Connection Status -->
+            <div id="connectionStatus" class="connection-status">
+                <span class="status-dot online"></span>
+                <span>Conectado a Firebase Cloud</span>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row" id="statsRow">
+                <div class="stat-card">
+                    <div class="stat-icon si-purple">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+                    </div>
+                    <div class="stat-val" id="statTotal">0</div>
+                    <div class="stat-lbl">Total Registros</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon si-green">
+                        <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                    </div>
+                    <div class="stat-val" id="statMonto">S/ 0.00</div>
+                    <div class="stat-lbl">Total Acumulado</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon si-teal">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                    </div>
+                    <div class="stat-val" id="statRUC20">0</div>
+                    <div class="stat-lbl">RUC inicio 20</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon si-amber">
+                        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                    </div>
+                    <div class="stat-val" id="statRUC10">0</div>
+                    <div class="stat-lbl">RUC inicio 10</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('registro')" id="tab-registro">
+                    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Nuevo Registro
+                </button>
+                <button class="tab" onclick="switchTab('lista')" id="tab-lista">
+                    <svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg>
+                    Lista de Registros
+                </button>
+                <button class="tab" onclick="switchTab('auditoria')" id="tab-auditoria">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
+                    Auditoría
+                </button>
+            </div>
+
+            <!-- PANEL REGISTRO -->
+            <div class="panel active" id="panel-registro">
+                <div class="form-card">
+                    <div class="form-card-title">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+                        Nuevo Registro
+                    </div>
+                    <div class="form-grid">
+                        <div>
+                            <div class="fg-label">
+                                <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                                RUC
+                            </div>
+                            <div style="display:flex;gap:.5rem;align-items:center">
+                                <select id="rucPrefixSelect" class="fg-select" style="width:80px">
+                                    <option value="20">20</option>
+                                    <option value="10">10</option>
+                                </select>
+                                <input type="text" id="rucNum" class="fg-input" style="flex:1;font-family:'JetBrains Mono',monospace" placeholder="Ingrese dígitos" maxlength="12" oninput="this.value=this.value.replace(/\D/g,'');updateRUC()">
+                            </div>
+                            <div id="rucFull" style="font-size:.78rem;color:var(--text3);margin-top:.35rem"></div>
+                        </div>
+                        <div>
+                            <div class="fg-label">
+                                <svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8V8h8v11zm-2-8h-4v2h4v-2zm0 4h-4v2h4v-2z"/></svg>
+                                Nombre de Empresa / Persona
+                            </div>
+                            <input type="text" id="nombreEmpresa" class="fg-input" placeholder="Razón social o nombre completo">
+                        </div>
+                        <div>
+                            <div class="fg-label">
+                                <svg viewBox="0 0 24 24"><path d="M18 17H6v-2h12v2zm0-4H6v-2h12v2zm0-4H6V7h12v2zM3 22l1.5-1.5L6 22l1.5-1.5L9 22l1.5-1.5L12 22l1.5-1.5L15 22l1.5-1.5L18 22l1.5-1.5L21 22V2l-1.5 1.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2 4.5 3.5 3 2v20z"/></svg>
+                                Número de Recibo
+                            </div>
+                            <input type="text" id="recibo" class="fg-input" placeholder="Ej: REC-2024-001">
+                        </div>
+                        <div>
+                            <div class="fg-label">
+                                <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+                                Monto (Soles)
+                            </div>
+                            <div style="display:flex;gap:.5rem;align-items:center">
+                                <input type="number" id="montoInput" class="fg-input" style="flex:1" placeholder="0.00" min="0" step="0.01" oninput="updateMonto()">
+                                <div class="monto-display" id="montoDisplay">S/ 0.00</div>
+                            </div>
+                        </div>
+                        <div class="span2">
+                            <div class="fg-label">
+                                <svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+                                Adjuntar PDF (opcional)
+                            </div>
+                            <div class="pdf-upload-area" onclick="document.getElementById('pdfInput').click()">
+                                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+                                <p>Haz clic para adjuntar un PDF como comprobante</p>
+                                <div id="pdfBadge" style="display:none"></div>
+                            </div>
+                            <input type="file" id="pdfInput" accept=".pdf" style="display:none" onchange="handlePDF(this)">
+                        </div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn-cancel" onclick="resetForm()">Limpiar</button>
+                        <button class="btn-save" onclick="saveRecord()">
+                            <svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                            Guardar Registro
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL LISTA -->
+            <div class="panel" id="panel-lista">
+                <div class="search-bar">
+                    <div class="search-input-wrap">
+                        <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" id="searchInput" class="search-inp" placeholder="Buscar por empresa, persona o RUC..." oninput="filterRecords()">
+                    </div>
+                   <button class="btn-export" onclick="downloadTemplate()">
+    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 14H7v-2h4v2zm0-4H7v-2h4v2zm0-4H7V7h4v2zm6 6h-4v-2h4v2zm0-4h-4v-2h4v2zm0-4h-4V7h4v2z"/></svg>
+    Descargar Plantilla
+</button>
+                    <button class="btn-import" onclick="document.getElementById('excelInput').click()">
+                        <svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                        Importar Excel
+                    </button>
+                    <input type="file" id="excelInput" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
+                    <button class="btn-export" onclick="exportExcel()">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11zm-3-7l-4 4-4-4 1.41-1.41L11 15.17V9h2v6.17l2.59-2.58L15 13z"/></svg>
+                        Exportar Excel
+                    </button>
+                    <button class="btn-export" onclick="exportPDF()">
+                        <svg viewBox="0 0 24 24"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 7.5c0 .83-.67 1.5-1.5 1.5H9v2H7.5V7H10c.83 0 1.5.67 1.5 1.5v1zm5 2c0 .83-.67 1.5-1.5 1.5h-2.5V7H15c.83 0 1.5.67 1.5 1.5v3zm4-3H19v1h1.5V11H19v2h-1.5V7h3v1.5zM9 9.5h1v-1H9v1zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm10 5.5h1v-3h-1v3z"/></svg>
+                        Exportar PDF
+                    </button>
+                </div>
+                <div class="table-wrap">
+                    <div class="loader-container" id="loaderTable" style="display:none">
+                        <div class="loader"></div>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>RUC</th>
+                                <th>Empresa / Persona</th>
+                                <th>Recibo</th>
+                                <th>Monto</th>
+                                <th>Fecha</th>
+                                <th>Creado por</th>
+                                <th>PDF</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                    <div id="emptyState" class="empty-state">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+                        <p>No hay registros aún. Crea tu primer registro.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL AUDITORIA -->
+            <div class="panel" id="panel-auditoria">
+                <div class="form-card">
+                    <div class="form-card-title">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
+                        Historial de Auditoría
+                    </div>
+                    <div class="search-bar">
+                        <div class="search-input-wrap">
+                            <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                            <input type="text" id="auditSearchInput" class="search-inp" placeholder="Buscar por usuario o acción..." oninput="filterAudit()">
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <div class="loader-container" id="loaderAudit" style="display:none">
+                            <div class="loader"></div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha y Hora</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Registro ID</th>
+                                    <th>Detalles</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditTableBody"></tbody>
+                        </table>
+                        <div id="emptyAudit" class="empty-state">
+                            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z"/></svg>
+                            <p>No hay registros de auditoría</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-title">
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                Editar Registro
+            </div>
+            <div class="form-grid">
+                <div>
+                    <div class="fg-label">RUC</div>
+                    <div style="display:flex;gap:.5rem;align-items:center">
+                        <select id="editRucPrefixSelect" class="fg-select" style="width:80px">
+                            <option value="20">20</option>
+                            <option value="10">10</option>
+                        </select>
+                        <input type="text" id="editRucNum" class="fg-input" style="flex:1;font-family:'JetBrains Mono',monospace" maxlength="12" oninput="this.value=this.value.replace(/\D/g,'');updateEditRUC()">
+                    </div>
+                    <div id="editRucFull" style="font-size:.78rem;color:var(--text3);margin-top:.35rem"></div>
+                </div>
+                <div>
+                    <div class="fg-label">Empresa / Persona</div>
+                    <input type="text" id="editNombre" class="fg-input">
+                </div>
+                <div>
+                    <div class="fg-label">Recibo</div>
+                    <input type="text" id="editRecibo" class="fg-input">
+                </div>
+                <div>
+                    <div class="fg-label">Monto (Soles)</div>
+                    <div style="display:flex;gap:.5rem;align-items:center">
+                        <input type="number" id="editMonto" class="fg-input" style="flex:1" oninput="updateEditMonto()">
+                        <div class="monto-display" id="editMontoDisplay">S/ 0.00</div>
+                    </div>
+                </div>
+                <div class="span2">
+                    <div class="fg-label">Adjuntar PDF</div>
+                    <div class="pdf-upload-area" onclick="document.getElementById('editPdfInput').click()">
+                        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+                        <p>Haz clic para adjuntar/cambiar PDF</p>
+                        <div id="editPdfBadge" style="display:none"></div>
+                    </div>
+                    <input type="file" id="editPdfInput" accept=".pdf" style="display:none" onchange="handleEditPDF(this)">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button class="btn-save" onclick="saveEdit()">
+                    <svg viewBox="0 0 24 24"><path d="M17 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast" id="toast">
+        <svg class="toast-icon" viewBox="0 0 24 24" id="toastIcon"></svg>
+        <span id="toastMsg"></span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
