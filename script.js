@@ -20,7 +20,6 @@ let filteredRecords = [];
 
 // Variables globales
 let currentUser = null;
-let currentUserRole = 'user';
 let records = [];
 let editIndex = null;
 let editPdfData = null;
@@ -28,237 +27,15 @@ let newPdfData = null;
 let isDark = true;
 let dbListener = null;
 let auditListener = null;
-let usersListener = null;
-let allAuditLogs = {};
 
 window.auditLog = [];
 
-// Usuarios válidos (se cargarán desde Firebase)
-let validUsers = {
-    'ADMIN': 'admin123'
+// Usuarios válidos
+const validUsers = {
+    'SANDRA': '77021712',
+    'ANDREA': '123456',
+    'CARLOS': 'admin123'
 };
-
-// Roles de usuarios
-let userRoles = {
-    'ADMIN': 'admin'
-};
-
-// ============ FUNCIONES DE USUARIOS ============
-async function loadUsersFromFirebase() {
-    if (!currentUser || currentUserRole !== 'admin') return;
-    
-    try {
-        const usersRef = database.ref('users_list');
-        const snapshot = await usersRef.once('value');
-        const data = snapshot.val();
-        
-        if (data) {
-            validUsers = {};
-            userRoles = {};
-            for (const [username, userData] of Object.entries(data)) {
-                validUsers[username] = userData.password;
-                userRoles[username] = userData.role || 'user';
-            }
-        }
-        
-        // Asegurar que ADMIN siempre existe
-        if (!validUsers['ADMIN']) {
-            validUsers['ADMIN'] = 'admin123';
-            userRoles['ADMIN'] = 'admin';
-            await database.ref('users_list/ADMIN').set({
-                password: 'admin123',
-                role: 'admin',
-                createdAt: new Date().toISOString()
-            });
-        }
-        
-        renderUsersTable();
-        updateAdminStats();
-        updateAuditUserFilter();
-    } catch (error) {
-        console.error('Error loading users:', error);
-    }
-}
-
-function setupUsersListener() {
-    if (!currentUser || currentUserRole !== 'admin') return;
-    
-    if (usersListener) {
-        usersListener.off();
-    }
-    
-    const usersRef = database.ref('users_list');
-    usersListener = usersRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            validUsers = {};
-            userRoles = {};
-            for (const [username, userData] of Object.entries(data)) {
-                validUsers[username] = userData.password;
-                userRoles[username] = userData.role || 'user';
-            }
-        }
-        renderUsersTable();
-        updateAdminStats();
-        updateAuditUserFilter();
-    });
-}
-
-async function addUser() {
-    if (currentUserRole !== 'admin') {
-        showToast('Solo administradores pueden agregar usuarios', 'error');
-        return;
-    }
-    
-    const username = document.getElementById('newUsername').value.trim().toUpperCase();
-    const password = document.getElementById('newUserPassword').value;
-    const role = document.getElementById('newUserRole').value;
-    
-    if (!username) {
-        showToast('Ingrese un nombre de usuario', 'error');
-        return;
-    }
-    
-    if (!password || password.length < 4) {
-        showToast('La contraseña debe tener al menos 4 caracteres', 'error');
-        return;
-    }
-    
-    if (validUsers[username]) {
-        showToast('El usuario ya existe', 'error');
-        return;
-    }
-    
-    showLoader('table');
-    
-    try {
-        const usersRef = database.ref(`users_list/${username}`);
-        await usersRef.set({
-            password: password,
-            role: role,
-            createdAt: new Date().toISOString(),
-            createdBy: currentUser
-        });
-        
-        // Crear estructura vacía para el nuevo usuario
-        await database.ref(`users/${username}`).set({
-            records: {},
-            audit: {}
-        });
-        
-        await addAuditLog('USER_CREATE', username, `Administrador ${currentUser} creó usuario ${username} con rol ${role}`);
-        
-        document.getElementById('newUsername').value = '';
-        document.getElementById('newUserPassword').value = '';
-        
-        showToast(`Usuario ${username} creado exitosamente`, 'success');
-        
-    } catch (error) {
-        console.error('Error adding user:', error);
-        showToast('Error al crear usuario', 'error');
-    } finally {
-        hideLoader('table');
-    }
-}
-
-async function deleteUser(username) {
-    if (currentUserRole !== 'admin') {
-        showToast('Solo administradores pueden eliminar usuarios', 'error');
-        return;
-    }
-    
-    if (username === 'ADMIN') {
-        showToast('No se puede eliminar el usuario administrador principal', 'error');
-        return;
-    }
-    
-    if (username === currentUser) {
-        showToast('No puedes eliminar tu propio usuario', 'error');
-        return;
-    }
-    
-    if (!confirm(`¿Está seguro de eliminar al usuario ${username}? Se eliminarán todos sus registros y auditorías.`)) return;
-    
-    showLoader('table');
-    
-    try {
-        // Eliminar usuario de la lista
-        await database.ref(`users_list/${username}`).remove();
-        
-        // Eliminar todos los datos del usuario
-        await database.ref(`users/${username}`).remove();
-        
-        await addAuditLog('USER_DELETE', username, `Administrador ${currentUser} eliminó usuario ${username}`);
-        
-        showToast(`Usuario ${username} eliminado`, 'success');
-        
-    } catch (error) {
-        console.error('Error deleting user:', error);
-        showToast('Error al eliminar usuario', 'error');
-    } finally {
-        hideLoader('table');
-    }
-}
-
-async function updateUserRole(username, newRole) {
-    if (currentUserRole !== 'admin') return;
-    
-    if (username === 'ADMIN' && newRole !== 'admin') {
-        showToast('El usuario ADMIN debe mantener rol de administrador', 'error');
-        renderUsersTable(); // Recargar para mostrar el rol correcto
-        return;
-    }
-    
-    showLoader('table');
-    
-    try {
-        await database.ref(`users_list/${username}/role`).set(newRole);
-        await addAuditLog('USER_UPDATE', username, `Administrador ${currentUser} cambió rol de ${username} a ${newRole}`);
-        showToast(`Rol de ${username} actualizado`, 'success');
-    } catch (error) {
-        console.error('Error updating role:', error);
-        showToast('Error al actualizar rol', 'error');
-    } finally {
-        hideLoader('table');
-    }
-}
-
-function renderUsersTable() {
-    const tbody = document.getElementById('usersTableBody');
-    if (!tbody) return;
-    
-    const users = Object.keys(validUsers);
-    
-    if (!users.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center">No hay usuarios</td></tr>';
-        return;
-    }
-    
-    tbody.innerHTML = users.map(username => `
-        <tr>
-            <td style="font-weight:500">${escapeHtml(username)}</td>
-            <td>
-                ${currentUserRole === 'admin' && username !== 'ADMIN' ? 
-                    `<select class="fg-select" style="padding:0.3rem;font-size:0.75rem" onchange="updateUserRole('${username}', this.value)">
-                        <option value="user" ${userRoles[username] === 'user' ? 'selected' : ''}>Usuario Normal</option>
-                        <option value="admin" ${userRoles[username] === 'admin' ? 'selected' : ''}>Administrador</option>
-                    </select>` :
-                    `<span class="${userRoles[username] === 'admin' ? 'tag-20' : 'tag-10'}">${userRoles[username] === 'admin' ? 'Administrador' : 'Usuario'}</span>`
-                }
-            </td>
-            <td style="color:var(--text3);font-size:0.75rem">-</td>
-            <td>
-                ${currentUserRole === 'admin' && username !== 'ADMIN' && username !== currentUser ?
-                    `<button class="btn-sm btn-del" onclick="deleteUser('${username}')">
-                        <svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                        Eliminar
-                    </button>` : 
-                    `<span style="color:var(--text3);font-size:0.7rem">—</span>`
-                }
-            </td>
-        </tr>
-    `).join('');
-}
 
 // ============ FUNCIONES DE CONEXIÓN ============
 function setupRealtimeSync() {
@@ -328,68 +105,10 @@ function setupRealtimeSync() {
             }
         });
         
-        // Si es admin, cargar usuarios y estadísticas
-        if (currentUserRole === 'admin') {
-            loadUsersFromFirebase();
-            setupUsersListener();
-            loadAllAuditLogs();
-        }
-        
     } catch (error) {
         console.error('Error al configurar sincronización:', error);
         hideLoader('table');
         showToast('Error al conectar con la nube', 'error');
-    }
-}
-
-async function loadAllAuditLogs() {
-    if (currentUserRole !== 'admin') return;
-    
-    try {
-        const usersRef = database.ref('users_list');
-        const usersSnapshot = await usersRef.once('value');
-        const users = usersSnapshot.val();
-        
-        if (users) {
-            for (const [username, userData] of Object.entries(users)) {
-                const auditRef = database.ref(`users/${username}/audit`);
-                const auditSnapshot = await auditRef.once('value');
-                const auditData = auditSnapshot.val();
-                
-                if (auditData) {
-                    allAuditLogs[username] = Object.values(auditData);
-                } else {
-                    allAuditLogs[username] = [];
-                }
-            }
-        }
-        
-        updateAdminStats();
-        updateAuditUserFilter();
-    } catch (error) {
-        console.error('Error loading all audit logs:', error);
-    }
-}
-
-function updateAuditUserFilter() {
-    const filterDiv = document.getElementById('auditUserFilter');
-    const select = document.getElementById('auditUserSelect');
-    
-    if (!filterDiv || !select) return;
-    
-    if (currentUserRole === 'admin') {
-        filterDiv.style.display = 'block';
-        const users = Object.keys(validUsers);
-        select.innerHTML = '<option value="">Todos los usuarios</option>' + 
-            users.map(u => `<option value="${u}">${u}</option>`).join('');
-    } else {
-        filterDiv.style.display = 'none';
-    }
-}
-
-function filterAuditByUser() {
-    if (currentUserRole === 'admin') {
-        renderAuditTable();
     }
 }
 
@@ -431,121 +150,6 @@ async function addAuditLog(action, recordId, details) {
     }
 }
 
-async function deleteAuditLogEntry(auditId, username) {
-    if (currentUserRole !== 'admin') {
-        showToast('Solo administradores pueden eliminar registros de auditoría', 'error');
-        return;
-    }
-    
-    const targetUser = username || currentUser;
-    
-    if (!confirm(`¿Eliminar este registro de auditoría?`)) return;
-    
-    showLoader('audit');
-    
-    try {
-        const auditRef = database.ref(`users/${targetUser}/audit`);
-        const snapshot = await auditRef.once('value');
-        const data = snapshot.val();
-        
-        if (data) {
-            for (const [key, value] of Object.entries(data)) {
-                if (value.id == auditId) {
-                    await auditRef.child(key).remove();
-                    break;
-                }
-            }
-        }
-        
-        await addAuditLog('AUDIT_DELETE', auditId.toString(), `Administrador ${currentUser} eliminó registro de auditoría de ${targetUser}`);
-        showToast('Registro de auditoría eliminado', 'success');
-        
-        if (currentUserRole === 'admin') {
-            await loadAllAuditLogs();
-        }
-        renderAuditTable();
-        
-    } catch (error) {
-        console.error('Error deleting audit log:', error);
-        showToast('Error al eliminar registro', 'error');
-    } finally {
-        hideLoader('audit');
-    }
-}
-
-async function cleanAuditLogs() {
-    if (currentUserRole !== 'admin') {
-        showToast('Solo administradores pueden limpiar auditorías', 'error');
-        return;
-    }
-    
-    const selectedUser = document.getElementById('cleanAuditUser').value;
-    const targetUser = selectedUser || currentUser;
-    
-    if (!confirm(`¿Eliminar TODOS los registros de auditoría de ${targetUser === '' ? 'TODOS los usuarios' : targetUser}? Esta acción no se puede deshacer.`)) return;
-    
-    showLoader('audit');
-    
-    try {
-        if (selectedUser === '') {
-            // Limpiar todos los usuarios
-            const users = Object.keys(validUsers);
-            for (const user of users) {
-                await database.ref(`users/${user}/audit`).remove();
-            }
-            await addAuditLog('AUDIT_CLEAN_ALL', 'ALL', `Administrador ${currentUser} limpió TODAS las auditorías del sistema`);
-            showToast('Todas las auditorías han sido eliminadas', 'success');
-        } else {
-            // Limpiar solo un usuario
-            await database.ref(`users/${selectedUser}/audit`).remove();
-            await addAuditLog('AUDIT_CLEAN', selectedUser, `Administrador ${currentUser} limpió auditorías de ${selectedUser}`);
-            showToast(`Auditorías de ${selectedUser} eliminadas`, 'success');
-        }
-        
-        if (currentUserRole === 'admin') {
-            await loadAllAuditLogs();
-        }
-        renderAuditTable();
-        
-    } catch (error) {
-        console.error('Error cleaning audit logs:', error);
-        showToast('Error al limpiar auditorías', 'error');
-    } finally {
-        hideLoader('audit');
-    }
-}
-
-async function cleanAllAuditLogs() {
-    if (currentUserRole !== 'admin') {
-        showToast('Solo administradores pueden limpiar auditorías', 'error');
-        return;
-    }
-    
-    if (!confirm('⚠️ ADVERTENCIA: Esto eliminará TODOS los registros de auditoría de TODOS los usuarios. ¿Está ABSOLUTAMENTE seguro?')) return;
-    
-    showLoader('audit');
-    
-    try {
-        const users = Object.keys(validUsers);
-        for (const user of users) {
-            await database.ref(`users/${user}/audit`).remove();
-        }
-        await addAuditLog('AUDIT_CLEAN_ALL', 'ALL', `Administrador ${currentUser} limpió TODAS las auditorías del sistema`);
-        showToast('Todas las auditorías han sido eliminadas', 'success');
-        
-        if (currentUserRole === 'admin') {
-            await loadAllAuditLogs();
-        }
-        renderAuditTable();
-        
-    } catch (error) {
-        console.error('Error cleaning all audit logs:', error);
-        showToast('Error al limpiar auditorías', 'error');
-    } finally {
-        hideLoader('audit');
-    }
-}
-
 // ============ FUNCIONES DE LOGIN ============
 function togglePasswordVisibility() {
     const input = document.getElementById('loginPass');
@@ -558,68 +162,28 @@ async function doLogin() {
     const username = document.getElementById('loginUser').value.trim().toUpperCase();
     const password = document.getElementById('loginPass').value;
     
-    // Primero cargar usuarios desde Firebase para verificar
-    try {
-        const usersRef = database.ref('users_list');
-        const snapshot = await usersRef.once('value');
-        const usersData = snapshot.val();
-        
-        if (usersData && usersData[username] && usersData[username].password === password) {
-            currentUser = username;
-            currentUserRole = usersData[username].role || 'user';
-            localStorage.setItem('glassroom_current_user', currentUser);
-            localStorage.setItem('glassroom_current_role', currentUserRole);
-            
-            const loginScreen = document.getElementById('loginScreen');
-            const mainApp = document.getElementById('mainApp');
-            const currentUserSpan = document.getElementById('currentUser');
-            const adminTab = document.getElementById('tab-admin');
-            
-            if (loginScreen) loginScreen.style.display = 'none';
-            if (mainApp) mainApp.style.display = 'block';
-            if (currentUserSpan) currentUserSpan.textContent = currentUser;
-            
-            // Mostrar pestaña de administración solo si es admin
-            if (adminTab) {
-                adminTab.style.display = currentUserRole === 'admin' ? 'inline-flex' : 'none';
-            }
-            
-            setupRealtimeSync();
-            showToast(`Bienvenido ${currentUser} - Conectado a la nube`, 'success');
-            return;
-        }
-    } catch (error) {
-        console.error('Error loading users:', error);
-    }
-    
-    // Fallback para ADMIN local
-    if (username === 'ADMIN' && password === 'admin123') {
+    if (validUsers[username] && validUsers[username] === password) {
         currentUser = username;
-        currentUserRole = 'admin';
         localStorage.setItem('glassroom_current_user', currentUser);
-        localStorage.setItem('glassroom_current_role', currentUserRole);
         
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
         const currentUserSpan = document.getElementById('currentUser');
-        const adminTab = document.getElementById('tab-admin');
         
         if (loginScreen) loginScreen.style.display = 'none';
         if (mainApp) mainApp.style.display = 'block';
         if (currentUserSpan) currentUserSpan.textContent = currentUser;
-        if (adminTab) adminTab.style.display = 'inline-flex';
         
         setupRealtimeSync();
         showToast(`Bienvenido ${currentUser} - Conectado a la nube`, 'success');
-        return;
+    } else {
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) {
+            errorDiv.style.display = 'flex';
+            setTimeout(() => errorDiv.style.display = 'none', 3000);
+        }
+        showToast('Usuario o contraseña incorrectos', 'error');
     }
-    
-    const errorDiv = document.getElementById('loginError');
-    if (errorDiv) {
-        errorDiv.style.display = 'flex';
-        setTimeout(() => errorDiv.style.display = 'none', 3000);
-    }
-    showToast('Usuario o contraseña incorrectos', 'error');
 }
 
 const loginPass = document.getElementById('loginPass');
@@ -643,18 +207,11 @@ function doLogout() {
             auditListener = null;
         }
         
-        if (usersListener) {
-            usersListener.off();
-            usersListener = null;
-        }
-        
         currentUser = null;
-        currentUserRole = 'user';
         records = [];
         window.auditLog = [];
         
         localStorage.removeItem('glassroom_current_user');
-        localStorage.removeItem('glassroom_current_role');
         
         const mainApp = document.getElementById('mainApp');
         const loginScreen = document.getElementById('loginScreen');
@@ -721,14 +278,6 @@ function switchTab(tab) {
         renderTable();
     } else if (tab === 'auditoria') {
         renderAuditTable();
-    } else if (tab === 'admin' && currentUserRole === 'admin') {
-        renderUsersTable();
-        updateAdminStats();
-        const cleanSelect = document.getElementById('cleanAuditUser');
-        if (cleanSelect) {
-            cleanSelect.innerHTML = '<option value="">Todos los usuarios</option>' + 
-                Object.keys(validUsers).map(u => `<option value="${u}">${u}</option>`).join('');
-        }
     }
 }
 
@@ -815,7 +364,6 @@ async function saveRecord() {
     const nombre = document.getElementById('nombreEmpresa');
     const recibo = document.getElementById('recibo');
     const montoInput = document.getElementById('montoInput');
-    const fechaEmision = document.getElementById('fechaEmision');
     
     if (!prefix || !rucNum || !nombre || !recibo || !montoInput) {
         showToast('Error en el formulario', 'error');
@@ -827,7 +375,6 @@ async function saveRecord() {
     const nombreValue = nombre.value.trim();
     const reciboValue = recibo.value.trim();
     const montoValue = parseFloat(montoInput.value) || 0;
-    const fechaEmisionValue = fechaEmision ? fechaEmision.value : new Date().toISOString().split('T')[0];
     
     if (!rucNumValue || rucNumValue.length < 6) {
         showToast('RUC incompleto (mínimo 6 dígitos después del prefijo)', 'error');
@@ -858,7 +405,6 @@ async function saveRecord() {
             nombre: nombreValue,
             recibo: reciboValue,
             monto: montoValue,
-            fechaEmision: fechaEmisionValue,
             fecha: now.toLocaleDateString('es-PE'),
             fechaHora: now.toLocaleString('es-PE'),
             createdBy: currentUser,
@@ -895,7 +441,6 @@ function resetForm() {
     const pdfBadge = document.getElementById('pdfBadge');
     const pdfInput = document.getElementById('pdfInput');
     const rucPrefix = document.getElementById('rucPrefixSelect');
-    const fechaEmision = document.getElementById('fechaEmision');
     
     if (rucNum) rucNum.value = '';
     if (nombre) nombre.value = '';
@@ -906,7 +451,6 @@ function resetForm() {
     if (pdfBadge) pdfBadge.style.display = 'none';
     if (pdfInput) pdfInput.value = '';
     if (rucPrefix) rucPrefix.value = '20';
-    if (fechaEmision) fechaEmision.value = '';
     
     newPdfData = null;
 }
@@ -951,7 +495,6 @@ function renderTable(filtered) {
             <td style="font-weight:500">${escapeHtml(record.nombre)}</td>
             <td style="color:var(--text2)">${escapeHtml(record.recibo)}</td>
             <td class="td-monto">${formatSoles(record.monto)}</td>
-            <td style="color:var(--text2);font-size:.78rem">${record.fechaEmision || '-'}</td>
             <td style="color:var(--text3);font-size:.78rem">${record.fechaHora || record.fecha}</td>
             <td style="color:var(--text3);font-size:.78rem">${record.createdBy || 'N/A'}</td>
             <td>${record.pdf ? `<span class="pdf-badge" style="cursor:pointer" onclick="viewPDF('${record.id}')"><svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>${record.pdf.name.substring(0, 12)}...</span>` : '<span style="color:var(--text3);font-size:.78rem">—</span>'}</td>
@@ -967,7 +510,7 @@ function renderTable(filtered) {
                     </button>
                 </div>
             </td>
-          </>
+         </tr>
         `;
     }).join('');
     
@@ -1094,7 +637,6 @@ function openEdit(recordId) {
     const recibo = document.getElementById('editRecibo');
     const monto = document.getElementById('editMonto');
     const montoDisplay = document.getElementById('editMontoDisplay');
-    const fechaEmision = document.getElementById('editFechaEmision');
     
     if (prefixSelect) prefixSelect.value = record.rucPrefix;
     if (rucNum) rucNum.value = record.rucNum;
@@ -1102,7 +644,6 @@ function openEdit(recordId) {
     if (recibo) recibo.value = record.recibo;
     if (monto) monto.value = record.monto;
     if (montoDisplay) montoDisplay.textContent = formatSoles(record.monto);
-    if (fechaEmision) fechaEmision.value = record.fechaEmision || '';
     
     updateEditRUC();
     
@@ -1132,7 +673,6 @@ async function saveEdit() {
     const nombre = document.getElementById('editNombre');
     const recibo = document.getElementById('editRecibo');
     const monto = document.getElementById('editMonto');
-    const fechaEmision = document.getElementById('editFechaEmision');
     
     if (!prefixSelect || !rucNum || !nombre || !recibo || !monto) return;
     
@@ -1149,7 +689,6 @@ async function saveEdit() {
         nombre: nombre.value.trim(),
         recibo: recibo.value.trim(),
         monto: parseFloat(monto.value) || 0,
-        fechaEmision: fechaEmision ? fechaEmision.value : (oldRecord.fechaEmision || ''),
         updatedBy: currentUser,
         updatedAt: new Date().toISOString(),
         fechaHora: new Date().toLocaleString('es-PE')
@@ -1223,33 +762,6 @@ function updateStats() {
     if (statRUC10) statRUC10.textContent = records.filter(r => r.rucPrefix === '10').length;
 }
 
-async function updateAdminStats() {
-    if (currentUserRole !== 'admin') return;
-    
-    const totalUsers = Object.keys(validUsers).length;
-    document.getElementById('adminTotalUsers').textContent = totalUsers;
-    
-    let totalRecords = 0;
-    let totalAudits = 0;
-    
-    for (const username of Object.keys(validUsers)) {
-        try {
-            const recordsSnapshot = await database.ref(`users/${username}/records`).once('value');
-            const recordsData = recordsSnapshot.val();
-            if (recordsData) totalRecords += Object.keys(recordsData).length;
-            
-            const auditSnapshot = await database.ref(`users/${username}/audit`).once('value');
-            const auditData = auditSnapshot.val();
-            if (auditData) totalAudits += Object.keys(auditData).length;
-        } catch (error) {
-            console.error(`Error getting stats for ${username}:`, error);
-        }
-    }
-    
-    document.getElementById('adminTotalRecords').textContent = totalRecords;
-    document.getElementById('adminTotalAudits').textContent = totalAudits;
-}
-
 // ============ EXPORTACIONES ============
 function exportExcel() {
     if (!records.length) {
@@ -1262,8 +774,7 @@ function exportExcel() {
         'Empresa/Persona': r.nombre,
         'Recibo': r.recibo,
         'Monto (S/)': r.monto,
-        'Fecha Emisión': r.fechaEmision || '',
-        'Fecha Registro': r.fechaHora || r.fecha,
+        'Fecha': r.fechaHora || r.fecha,
         'Creado por': r.createdBy,
         'Última edición por': r.updatedBy,
         'PDF adjunto': r.pdf ? 'Sí' : 'No'
@@ -1282,27 +793,24 @@ function downloadTemplate() {
             'RUC': '20123456789',
             'EMPRESA/PERSONA': 'Empresa Los Andes S.A.C. (Ejemplo)',
             'RECIBO': 'REC-001',
-            'MONTO': '1500.00',
-            'FECHA_EMISION': '2024-01-15'
+            'MONTO': '1500.00'
         },
         {
             'RUC': '20456789123',
             'EMPRESA/PERSONA': 'Corporación de Servicios Generales (Ejemplo)',
             'RECIBO': 'REC-002',
-            'MONTO': '2500.50',
-            'FECHA_EMISION': '2024-01-20'
+            'MONTO': '2500.50'
         },
         {
             'RUC': '10789123456',
             'EMPRESA/PERSONA': 'María del Carmen Gutiérrez (Ejemplo Persona Natural)',
             'RECIBO': 'REC-003',
-            'MONTO': '850.75',
-            'FECHA_EMISION': '2024-01-25'
+            'MONTO': '850.75'
         }
     ];
     
     const ws = XLSX.utils.json_to_sheet(templateData);
-    ws['!cols'] = [{ wch: 15 }, { wch: 45 }, { wch: 15 }, { wch: 12 }, { wch: 12 }];
+    ws['!cols'] = [{ wch: 15 }, { wch: 45 }, { wch: 15 }, { wch: 12 }];
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Plantilla_Importacion');
@@ -1351,7 +859,6 @@ function importExcel(input) {
             let nombreIndex = -1;
             let reciboIndex = -1;
             let montoIndex = -1;
-            let fechaIndex = -1;
             
             for (let i = 0; i < headers.length; i++) {
                 const header = headers[i];
@@ -1359,7 +866,6 @@ function importExcel(input) {
                 if (header.includes('nombre') || header.includes('empresa') || header.includes('razon')) nombreIndex = i;
                 if (header.includes('recibo') || header.includes('factura')) reciboIndex = i;
                 if (header.includes('monto') || header.includes('total') || header.includes('importe')) montoIndex = i;
-                if (header.includes('fecha') || header.includes('emision')) fechaIndex = i;
             }
             
             if (rucIndex === -1) rucIndex = 0;
@@ -1386,7 +892,6 @@ function importExcel(input) {
                     let nombre = row[nombreIndex] ? String(row[nombreIndex]).trim() : '';
                     let recibo = reciboIndex !== -1 && row[reciboIndex] ? String(row[reciboIndex]).trim() : '';
                     let monto = 0;
-                    let fechaEmision = fechaIndex !== -1 && row[fechaIndex] ? String(row[fechaIndex]).trim() : '';
                     
                     ruc = ruc.replace(/[^0-9]/g, '');
                     
@@ -1410,10 +915,6 @@ function importExcel(input) {
                         recibo = `IMP-${Date.now()}-${added + 1}`;
                     }
                     
-                    if (fechaEmision && !/^\d{4}-\d{2}-\d{2}$/.test(fechaEmision)) {
-                        fechaEmision = '';
-                    }
-                    
                     const prefix = ruc.substring(0, 2);
                     const rucNumVal = ruc.substring(2);
                     const now = new Date();
@@ -1427,7 +928,6 @@ function importExcel(input) {
                         nombre: nombre,
                         recibo: recibo,
                         monto: monto,
-                        fechaEmision: fechaEmision,
                         fecha: now.toLocaleDateString('es-PE'),
                         fechaHora: now.toLocaleString('es-PE'),
                         createdBy: currentUser,
@@ -1484,7 +984,7 @@ function exportPDF() {
     
     try {
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
@@ -1578,14 +1078,13 @@ function exportPDF() {
         doc.text('DETALLE DE REGISTROS', margin, currentY);
         currentY += 5;
         
-        const headers = ['#', 'RUC', 'EMPRESA / PERSONA', 'RECIBO', 'MONTO', 'FECHA EMISIÓN', 'FECHA REGISTRO', 'CREADO POR'];
+        const headers = ['#', 'RUC', 'EMPRESA / PERSONA', 'RECIBO', 'MONTO', 'FECHA', 'CREADO POR'];
         const rows = records.map((r, i) => [
             (i + 1).toString(),
             r.ruc,
-            r.nombre.length > 30 ? r.nombre.substring(0, 27) + '...' : r.nombre,
-            r.recibo.length > 15 ? r.recibo.substring(0, 12) + '...' : r.recibo,
+            r.nombre.length > 35 ? r.nombre.substring(0, 32) + '...' : r.nombre,
+            r.recibo.length > 18 ? r.recibo.substring(0, 15) + '...' : r.recibo,
             formatSoles(r.monto),
-            r.fechaEmision || '-',
             (r.fechaHora || r.fecha).substring(0, 16),
             r.createdBy || 'N/A'
         ]);
@@ -1599,20 +1098,21 @@ function exportPDF() {
             headStyles: { fillColor: primaryColor, textColor: [255, 255, 255], fontSize: 7.5, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             bodyStyles: { textColor: textDark, fontSize: 7, valign: 'middle' },
             alternateRowStyles: { fillColor: [248, 248, 252] },
-            columnStyles: { 
-                0: { cellWidth: 8, halign: 'center' }, 
-                1: { cellWidth: 25, halign: 'center', fontStyle: 'bold', textColor: [124, 106, 247] }, 
-                2: { cellWidth: 50 }, 
-                3: { cellWidth: 22, halign: 'center' }, 
-                4: { cellWidth: 20, halign: 'right', fontStyle: 'bold', textColor: [74, 222, 128] },
-                5: { cellWidth: 22, halign: 'center' },
-                6: { cellWidth: 28, halign: 'center' },
-                7: { cellWidth: 20, halign: 'center' }
-            },
+            columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 1: { cellWidth: 28, halign: 'center', fontStyle: 'bold', textColor: [124, 106, 247] }, 2: { cellWidth: 55 }, 3: { cellWidth: 25, halign: 'center' }, 4: { cellWidth: 22, halign: 'right', fontStyle: 'bold', textColor: [74, 222, 128] }, 5: { cellWidth: 28, halign: 'center' }, 6: { cellWidth: 20, halign: 'center' } },
             margin: { left: margin, right: margin },
             tableWidth: contentWidth,
             pageBreak: 'auto',
-            showHead: 'everyPage'
+            showHead: 'everyPage',
+            didDrawPage: function(data) {
+                if (data.pageNumber > 1) {
+                    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                    doc.rect(0, 0, pageWidth, 5, 'F');
+                    doc.setFontSize(7);
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Studio Visual Code - GlassRoom Register Cloud', pageWidth / 2, 3.5, { align: 'center' });
+                }
+            }
         });
         
         const pageCount = doc.internal.getNumberOfPages();
@@ -1627,6 +1127,11 @@ function exportPDF() {
             doc.text('Studio Visual Code', margin, pageHeight - 6);
             doc.text(`Generado: ${new Date().toLocaleDateString('es-PE')}`, pageWidth / 2, pageHeight - 6, { align: 'center' });
             doc.text(`Página ${i} de ${pageCount}`, pageWidth - margin, pageHeight - 6, { align: 'right' });
+            if (i === 1) {
+                doc.setFontSize(5.5);
+                doc.setTextColor(150, 150, 170);
+                doc.text('Documento generado automáticamente - Reporte oficial con trazabilidad', pageWidth / 2, pageHeight - 2.5, { align: 'center' });
+            }
         }
         
         doc.save(`GlassRoom_Reporte_${currentUser}_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -1642,31 +1147,13 @@ function exportPDF() {
 
 // ============ AUDITORÍA ============
 function renderAuditTable() {
-    const selectedUser = document.getElementById('auditUserSelect')?.value || '';
-    let auditData = [];
-    
-    if (currentUserRole === 'admin' && selectedUser) {
-        auditData = allAuditLogs[selectedUser] || [];
-        auditData = [...auditData].sort((a, b) => b.id - a.id);
-    } else if (currentUserRole === 'admin' && !selectedUser) {
-        // Todos los usuarios
-        auditData = [];
-        for (const [username, logs] of Object.entries(allAuditLogs)) {
-            if (logs && logs.length) {
-                auditData.push(...logs.map(log => ({ ...log, usuarioOriginal: username })));
-            }
-        }
-        auditData = auditData.sort((a, b) => b.id - a.id);
-    } else {
-        auditData = window.auditLog || [];
-    }
-    
+    const auditLog = window.auditLog || [];
     const tbody = document.getElementById('auditTableBody');
     const empty = document.getElementById('emptyAudit');
     
     if (!tbody) return;
     
-    if (!auditData.length) {
+    if (!auditLog.length) {
         tbody.innerHTML = '';
         if (empty) empty.style.display = 'block';
         return;
@@ -1674,34 +1161,20 @@ function renderAuditTable() {
     
     if (empty) empty.style.display = 'none';
     
-    tbody.innerHTML = auditData.map(log => {
+    tbody.innerHTML = auditLog.map(log => {
         let actionClass = '';
         if (log.accion === 'CREATE') actionClass = 'audit-create';
         else if (log.accion === 'UPDATE') actionClass = 'audit-update';
         else if (log.accion === 'DELETE') actionClass = 'audit-delete';
-        else if (log.accion === 'IMPORT') actionClass = 'audit-create';
-        else if (log.accion === 'USER_CREATE' || log.accion === 'USER_UPDATE' || log.accion === 'USER_DELETE') actionClass = 'audit-update';
-        else if (log.accion === 'AUDIT_CLEAN' || log.accion === 'AUDIT_CLEAN_ALL' || log.accion === 'AUDIT_DELETE') actionClass = 'audit-delete';
         else actionClass = 'audit-create';
-        
-        const displayUser = log.usuarioOriginal || log.usuario;
         
         return `
             <tr>
                 <td style="font-size:.78rem;color:var(--text2)">${log.fechaHora}</td>
-                <td style="font-weight:500">${escapeHtml(displayUser)}</td>
+                <td style="font-weight:500">${escapeHtml(log.usuario)}</td>
                 <td><span class="audit-badge ${actionClass}">${log.accion}</span></td>
-                <td style="font-family:JetBrains Mono,monospace;font-size:.7rem">${log.registroId}</td>
-                <td style="font-size:.8rem;color:var(--text2)">${escapeHtml(log.detalles)}</td>
-                <td>
-                    ${currentUserRole === 'admin' ? 
-                        `<button class="btn-sm btn-del" onclick="deleteAuditLogEntry(${log.id}, '${displayUser}')" style="background:rgba(248,113,113,0.15)">
-                            <svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                            Eliminar
-                        </button>` : 
-                        `<span style="color:var(--text3);font-size:.7rem">—</span>`
-                    }
-                </td>
+                <td style="font-family:JetBrains Mono,monospace;font-size:.75rem">${log.registroId}</td>
+                <td style="font-size:.82rem;color:var(--text2)">${escapeHtml(log.detalles)}</td>
             </tr>
         `;
     }).join('');
@@ -1712,30 +1185,17 @@ function filterAudit() {
     if (!searchInput) return;
     
     const query = searchInput.value.toLowerCase();
-    const selectedUser = document.getElementById('auditUserSelect')?.value || '';
-    let auditData = [];
-    
-    if (currentUserRole === 'admin' && selectedUser) {
-        auditData = allAuditLogs[selectedUser] || [];
-    } else if (currentUserRole === 'admin' && !selectedUser) {
-        for (const [username, logs] of Object.entries(allAuditLogs)) {
-            if (logs && logs.length) {
-                auditData.push(...logs.map(log => ({ ...log, usuarioOriginal: username })));
-            }
-        }
-    } else {
-        auditData = window.auditLog || [];
-    }
-    
-    const filtered = auditData.filter(log => {
-        const displayUser = log.usuarioOriginal || log.usuario;
-        return displayUser.toLowerCase().includes(query) ||
-            log.accion.toLowerCase().includes(query) ||
-            log.detalles.toLowerCase().includes(query);
-    });
-    
+    const auditLog = window.auditLog || [];
     const tbody = document.getElementById('auditTableBody');
     const empty = document.getElementById('emptyAudit');
+    
+    if (!tbody) return;
+    
+    const filtered = auditLog.filter(log => 
+        log.usuario.toLowerCase().includes(query) ||
+        log.accion.toLowerCase().includes(query) ||
+        log.detalles.toLowerCase().includes(query)
+    );
     
     if (!filtered.length) {
         tbody.innerHTML = '';
@@ -1752,24 +1212,13 @@ function filterAudit() {
         else if (log.accion === 'DELETE') actionClass = 'audit-delete';
         else actionClass = 'audit-create';
         
-        const displayUser = log.usuarioOriginal || log.usuario;
-        
         return `
             <tr>
                 <td style="font-size:.78rem;color:var(--text2)">${log.fechaHora}</td>
-                <td style="font-weight:500">${escapeHtml(displayUser)}</td>
+                <td style="font-weight:500">${escapeHtml(log.usuario)}</td>
                 <td><span class="audit-badge ${actionClass}">${log.accion}</span></td>
-                <td style="font-family:JetBrains Mono,monospace;font-size:.7rem">${log.registroId}</td>
-                <td style="font-size:.8rem;color:var(--text2)">${escapeHtml(log.detalles)}</td>
-                <td>
-                    ${currentUserRole === 'admin' ? 
-                        `<button class="btn-sm btn-del" onclick="deleteAuditLogEntry(${log.id}, '${displayUser}')" style="background:rgba(248,113,113,0.15)">
-                            <svg viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                            Eliminar
-                        </button>` : 
-                        `<span style="color:var(--text3);font-size:.7rem">—</span>`
-                    }
-                </td>
+                <td style="font-family:JetBrains Mono,monospace;font-size:.75rem">${log.registroId}</td>
+                <td style="font-size:.82rem;color:var(--text2)">${escapeHtml(log.detalles)}</td>
             </tr>
         `;
     }).join('');
@@ -1811,22 +1260,16 @@ function showToast(message, type = 'success') {
 // ============ INICIALIZACIÓN ============
 function checkExistingSession() {
     const savedUser = localStorage.getItem('glassroom_current_user');
-    const savedRole = localStorage.getItem('glassroom_current_role');
-    
-    if (savedUser) {
+    if (savedUser && validUsers[savedUser]) {
         currentUser = savedUser;
-        currentUserRole = savedRole || 'user';
-        
         const loginScreen = document.getElementById('loginScreen');
         const mainApp = document.getElementById('mainApp');
         const currentUserSpan = document.getElementById('currentUser');
-        const adminTab = document.getElementById('tab-admin');
         
         if (loginScreen) loginScreen.style.display = 'none';
         if (mainApp) {
             mainApp.style.display = 'block';
             if (currentUserSpan) currentUserSpan.textContent = currentUser;
-            if (adminTab) adminTab.style.display = currentUserRole === 'admin' ? 'inline-flex' : 'none';
             setupRealtimeSync();
         }
     }
