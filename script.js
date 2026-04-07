@@ -1525,3 +1525,517 @@ if (document.readyState === 'loading') {
 } else {
     checkExistingSession();
 }
+// ============ ANIMACIONES FUTURISTAS Y COOL ============
+
+// 1. EFECTO DE RESPLANDOR NEÓN EN TARJETAS AL HOVER
+function addNeonGlowEffect() {
+    const cards = document.querySelectorAll('.stat-card, .form-card, .login-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transition = 'all 0.3s ease';
+            this.style.transform = 'translateY(-5px) scale(1.02)';
+            this.style.boxShadow = '0 0 30px rgba(124, 106, 247, 0.5), 0 0 15px rgba(45, 212, 191, 0.3)';
+            this.style.borderColor = 'rgba(124, 106, 247, 0.8)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+            this.style.boxShadow = '';
+            this.style.borderColor = '';
+        });
+    });
+}
+
+// 2. EFECTO DE ESCANEADO HOLOGRÁFICO EN TABLAS
+function addHolographicScan() {
+    const tableWrap = document.querySelector('.table-wrap');
+    if (!tableWrap) return;
+    
+    const scanLine = document.createElement('div');
+    scanLine.className = 'holographic-scan';
+    scanLine.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, var(--accent2), var(--teal), var(--accent2), transparent);
+        animation: scanMove 3s linear infinite;
+        pointer-events: none;
+        z-index: 10;
+        opacity: 0.6;
+    `;
+    tableWrap.style.position = 'relative';
+    tableWrap.style.overflow = 'hidden';
+    tableWrap.appendChild(scanLine);
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes scanMove {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 0.8; }
+            90% { opacity: 0.8; }
+            100% { top: 100%; opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 3. EFECTO DE MATRIZ DIGITAL EN EL FONDO
+function createDigitalRain() {
+    const bgAnim = document.querySelector('.bg-anim');
+    if (!bgAnim) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.opacity = '0.08';
+    canvas.style.pointerEvents = 'none';
+    bgAnim.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+    const fontSize = 14;
+    const columns = Math.floor(width / fontSize);
+    const drops = Array(columns).fill(1);
+    
+    function draw() {
+        ctx.fillStyle = 'rgba(15, 15, 26, 0.04)';
+        ctx.fillRect(0, 0, width, height);
+        
+        ctx.fillStyle = '#7c6af7';
+        ctx.font = `${fontSize}px 'JetBrains Mono', monospace`;
+        
+        for (let i = 0; i < drops.length; i++) {
+            const char = chars[Math.floor(Math.random() * chars.length)];
+            const x = i * fontSize;
+            const y = drops[i] * fontSize;
+            
+            ctx.fillText(char, x, y);
+            
+            if (y > height && Math.random() > 0.975) {
+                drops[i] = 0;
+            }
+            drops[i]++;
+        }
+    }
+    
+    setInterval(draw, 50);
+    
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    });
+}
+
+// 4. EFECTO DE PARTÍCULAS TIPO "STAR WARS" (HIPERESPACIO)
+function createHyperSpaceParticles() {
+    const bgAnim = document.querySelector('.bg-anim');
+    if (!bgAnim) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.opacity = '0.15';
+    canvas.style.pointerEvents = 'none';
+    bgAnim.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    const particles = [];
+    const particleCount = 100;
+    
+    for (let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            size: Math.random() * 3 + 1,
+            speedX: (Math.random() - 0.5) * 2,
+            speedY: (Math.random() - 0.5) * 2,
+            alpha: Math.random() * 0.5 + 0.2
+        });
+    }
+    
+    function animateParticles() {
+        ctx.clearRect(0, 0, width, height);
+        
+        particles.forEach(p => {
+            p.x += p.speedX;
+            p.y += p.speedY;
+            
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(124, 106, 247, ${p.alpha})`;
+            ctx.fill();
+            
+            // Estela
+            ctx.beginPath();
+            ctx.arc(p.x - p.speedX * 3, p.y - p.speedY * 3, p.size * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(45, 212, 191, ${p.alpha * 0.5})`;
+            ctx.fill();
+        });
+        
+        requestAnimationFrame(animateParticles);
+    }
+    
+    animateParticles();
+    
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    });
+}
+
+// 5. EFECTO DE TEXTO CON BRILLO CIBERNETICO
+function addCyberTextEffect() {
+    const titles = document.querySelectorAll('.logo-title, .tb-title, .form-card-title');
+    titles.forEach(title => {
+        title.style.position = 'relative';
+        title.style.display = 'inline-block';
+        
+        // Efecto de brillo al hover
+        title.addEventListener('mouseenter', function() {
+            this.style.textShadow = '0 0 10px var(--accent2), 0 0 20px var(--teal)';
+            this.style.transition = 'all 0.3s ease';
+        });
+        title.addEventListener('mouseleave', function() {
+            this.style.textShadow = '';
+        });
+    });
+}
+
+// 6. EFECTO DE CARGA CON CÍRCULOS CONCÉNTRICOS
+function addLoadingRingEffect() {
+    const loaders = document.querySelectorAll('.loader-container');
+    loaders.forEach(loader => {
+        const originalLoader = loader.querySelector('.loader');
+        if (originalLoader && !loader.querySelector('.loading-rings')) {
+            const rings = document.createElement('div');
+            rings.className = 'loading-rings';
+            rings.innerHTML = `
+                <div class="ring"></div>
+                <div class="ring"></div>
+                <div class="ring"></div>
+            `;
+            rings.style.cssText = `
+                position: relative;
+                width: 60px;
+                height: 60px;
+            `;
+            originalLoader.style.display = 'none';
+            loader.appendChild(rings);
+        }
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        .loading-rings {
+            position: relative;
+            width: 60px;
+            height: 60px;
+        }
+        .ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 3px solid transparent;
+            border-top-color: var(--accent);
+            animation: ringSpin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+        .ring:nth-child(2) {
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            border-top-color: var(--teal);
+            animation-delay: 0.3s;
+            animation-duration: 1.2s;
+        }
+        .ring:nth-child(3) {
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            border-top-color: var(--amber);
+            animation-delay: 0.6s;
+            animation-duration: 1s;
+        }
+        @keyframes ringSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 7. EFECTO DE TRANSICIÓN TIPO "HOLOGRAMA" PARA MODALES
+function addHologramModalEffect() {
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+    
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'class') {
+                if (modal.classList.contains('open')) {
+                    modal.style.backdropFilter = 'blur(8px)';
+                    modal.style.transition = 'all 0.3s ease';
+                    
+                    const modalContent = modal.querySelector('.modal');
+                    if (modalContent) {
+                        modalContent.style.animation = 'hologramEnter 0.4s ease-out';
+                    }
+                }
+            }
+        });
+    });
+    
+    observer.observe(modal, { attributes: true });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes hologramEnter {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) rotateX(-10deg);
+                filter: blur(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotateX(0);
+                filter: blur(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 8. EFECTO DE MOUSE TRAIL (RASTRO DE RATÓN)
+function createMouseTrail() {
+    const trail = [];
+    const maxTrail = 15;
+    
+    document.addEventListener('mousemove', (e) => {
+        const particle = document.createElement('div');
+        particle.className = 'mouse-trail-particle';
+        particle.style.cssText = `
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background: radial-gradient(circle, var(--accent2), var(--teal));
+            border-radius: 50%;
+            left: ${e.clientX - 3}px;
+            top: ${e.clientY - 3}px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        `;
+        document.body.appendChild(particle);
+        trail.push(particle);
+        
+        if (trail.length > maxTrail) {
+            const oldest = trail.shift();
+            oldest.style.opacity = '0';
+            setTimeout(() => oldest.remove(), 300);
+        }
+        
+        setTimeout(() => {
+            if (particle.parentNode) {
+                particle.style.opacity = '0';
+                setTimeout(() => particle.remove(), 300);
+            }
+        }, 500);
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        .mouse-trail-particle {
+            animation: trailFade 0.5s ease-out forwards;
+        }
+        @keyframes trailFade {
+            0% { opacity: 0.8; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 9. EFECTO DE "GLITCH" EN BOTONES IMPORTANTES
+function addGlitchEffect() {
+    const importantBtns = document.querySelectorAll('.btn-save, .btn-primary');
+    importantBtns.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.style.animation = 'glitch 0.3s ease-in-out';
+        });
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 1px); }
+            40% { transform: translate(2px, -1px); }
+            60% { transform: translate(-1px, 2px); }
+            80% { transform: translate(1px, -2px); }
+            100% { transform: translate(0); }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 10. EFECTO DE OLA DE BRILLO EN TABLA AL CARGAR
+function addTableWaveEffect() {
+    const rows = document.querySelectorAll('.data-table tbody tr');
+    rows.forEach((row, index) => {
+        row.style.animation = `waveGlow 0.5s ease-out ${index * 0.05}s forwards`;
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-20px)';
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes waveGlow {
+            0% {
+                opacity: 0;
+                transform: translateX(-20px);
+                filter: blur(2px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+                filter: blur(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 11. RELOJ DIGITAL FUTURISTA EN EL TOPBAR
+function addFuturisticClock() {
+    const topbar = document.querySelector('.tb-right');
+    if (!topbar) return;
+    
+    const clock = document.createElement('div');
+    clock.className = 'futuristic-clock';
+    clock.style.cssText = `
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.75rem;
+        letter-spacing: 2px;
+        color: var(--teal);
+        border: 1px solid rgba(45, 212, 191, 0.3);
+        box-shadow: 0 0 10px rgba(45, 212, 191, 0.2);
+        margin-right: 0.5rem;
+    `;
+    topbar.insertBefore(clock, topbar.firstChild);
+    
+    function updateClock() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('es-PE', { hour12: false });
+        const date = now.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        clock.innerHTML = `${date} | ${time}`;
+    }
+    
+    updateClock();
+    setInterval(updateClock, 1000);
+}
+
+// 12. EFECTO DE ONDAS DE SONIDO EN ESTADÍSTICAS
+function addSoundWaveEffect() {
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach(card => {
+        const wave = document.createElement('div');
+        wave.className = 'sound-wave';
+        wave.style.cssText = `
+            position: absolute;
+            bottom: 10px;
+            right: 15px;
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 20px;
+            opacity: 0.5;
+        `;
+        wave.innerHTML = `
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        `;
+        card.style.position = 'relative';
+        card.appendChild(wave);
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        .wave-bar {
+            width: 3px;
+            background: linear-gradient(180deg, var(--accent2), var(--teal));
+            border-radius: 2px;
+            animation: wavePulse 0.8s ease-in-out infinite;
+        }
+        .wave-bar:nth-child(1) { height: 8px; animation-delay: 0s; }
+        .wave-bar:nth-child(2) { height: 12px; animation-delay: 0.2s; }
+        .wave-bar:nth-child(3) { height: 6px; animation-delay: 0.4s; }
+        .wave-bar:nth-child(4) { height: 10px; animation-delay: 0.6s; }
+        @keyframes wavePulse {
+            0%, 100% { height: 4px; }
+            50% { height: 16px; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// ============ INICIALIZAR TODAS LAS ANIMACIONES FUTURISTAS ============
+function initFuturisticAnimations() {
+    setTimeout(() => {
+        addNeonGlowEffect();
+        addHolographicScan();
+        // Elige UNA de estas dos (la que más te guste):
+        // createDigitalRain();      // Lluvia de código Matrix
+        createHyperSpaceParticles(); // Partículas estilo hiperespacio (más cool)
+        addCyberTextEffect();
+        addLoadingRingEffect();
+        addHologramModalEffect();
+        createMouseTrail();
+        addGlitchEffect();
+        addTableWaveEffect();
+        addFuturisticClock();
+        addSoundWaveEffect();
+    }, 500);
+}
+
+// Ejecutar después de que cargue todo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFuturisticAnimations);
+} else {
+    initFuturisticAnimations();
+}
