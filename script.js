@@ -2039,3 +2039,451 @@ if (document.readyState === 'loading') {
 } else {
     initFuturisticAnimations();
 }
+// ============ ANIMACIONES FUTURISTAS - VOLUMEN 2 ============
+
+// 13. EFECTO DE "ENERGÍA CORRIENTE" EN BORDES DE TABLA
+function addFlowingEnergyBorder() {
+    const tableWrap = document.querySelector('.table-wrap');
+    if (!tableWrap) return;
+    
+    tableWrap.style.position = 'relative';
+    tableWrap.style.border = 'none';
+    tableWrap.style.background = 'var(--glass)';
+    
+    const energyBorder = document.createElement('div');
+    energyBorder.className = 'energy-border';
+    energyBorder.style.cssText = `
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(90deg, 
+            transparent, 
+            var(--accent), 
+            var(--teal), 
+            var(--accent), 
+            transparent);
+        border-radius: var(--r);
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+    `;
+    
+    tableWrap.insertBefore(energyBorder, tableWrap.firstChild);
+    
+    tableWrap.addEventListener('mouseenter', () => {
+        energyBorder.style.opacity = '1';
+        energyBorder.style.animation = 'energyFlow 2s linear infinite';
+    });
+    
+    tableWrap.addEventListener('mouseleave', () => {
+        energyBorder.style.opacity = '0';
+        energyBorder.style.animation = 'none';
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes energyFlow {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .energy-border {
+            background-size: 200% 100%;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 14. EFECTO DE "LENTE DE AUMENTO CIBERNÉTICO" EN IMÁGENES/TABLA
+function addCyberZoomEffect() {
+    const table = document.querySelector('.data-table');
+    if (!table) return;
+    
+    const zoomLens = document.createElement('div');
+    zoomLens.className = 'cyber-lens';
+    zoomLens.style.cssText = `
+        position: fixed;
+        width: 150px;
+        height: 150px;
+        border-radius: 50%;
+        border: 2px solid var(--accent);
+        background: radial-gradient(circle, rgba(124,106,247,0.1), transparent);
+        backdrop-filter: blur(2px);
+        pointer-events: none;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        transform: translate(-50%, -50%);
+    `;
+    document.body.appendChild(zoomLens);
+    
+    table.addEventListener('mousemove', (e) => {
+        if (e.target.closest('td')) {
+            zoomLens.style.opacity = '1';
+            zoomLens.style.left = e.clientX + 'px';
+            zoomLens.style.top = e.clientY + 'px';
+            
+            const cell = e.target.closest('td');
+            cell.style.transform = 'scale(1.02)';
+            cell.style.transition = 'all 0.2s ease';
+            cell.style.zIndex = '10';
+            cell.style.position = 'relative';
+            cell.style.background = 'var(--glass2)';
+        }
+    });
+    
+    table.addEventListener('mouseleave', () => {
+        zoomLens.style.opacity = '0';
+        document.querySelectorAll('.data-table td').forEach(td => {
+            td.style.transform = '';
+            td.style.background = '';
+        });
+    });
+}
+
+// 15. EFECTO DE "PARTÍCULAS MAGNÉTICAS" QUE SIGUEN AL MOUSE
+function createMagneticParticles() {
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9998';
+    document.body.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    const particles = [];
+    const particleCount = 30;
+    let mouseX = width / 2;
+    let mouseY = height / 2;
+    
+    for (let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: 0,
+            vy: 0,
+            size: Math.random() * 3 + 1,
+            alpha: Math.random() * 0.5 + 0.3
+        });
+    }
+    
+    document.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+    
+    function animateMagneticParticles() {
+        ctx.clearRect(0, 0, width, height);
+        
+        particles.forEach(p => {
+            const dx = mouseX - p.x;
+            const dy = mouseY - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const force = Math.min(100 / (dist + 1), 3);
+            
+            if (dist < 150) {
+                p.vx += (dx / dist) * force * 0.05;
+                p.vy += (dy / dist) * force * 0.05;
+            }
+            
+            p.vx *= 0.95;
+            p.vy *= 0.95;
+            p.x += p.vx;
+            p.y += p.vy;
+            
+            if (p.x < 0) p.x = width;
+            if (p.x > width) p.x = 0;
+            if (p.y < 0) p.y = height;
+            if (p.y > height) p.y = 0;
+            
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(124, 106, 247, ${p.alpha})`;
+            ctx.fill();
+        });
+        
+        requestAnimationFrame(animateMagneticParticles);
+    }
+    
+    animateMagneticParticles();
+    
+    window.addEventListener('resize', () => {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+    });
+}
+
+// 16. EFECTO DE "CRISTAL LÍQUIDO" EN MODALES
+function addLiquidCrystalEffect() {
+    const modal = document.getElementById('editModal');
+    if (!modal) return;
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        .modal {
+            backdrop-filter: blur(10px);
+            animation: liquidCrystal 0.5s ease-out;
+            transform-origin: center;
+        }
+        @keyframes liquidCrystal {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) rotateX(15deg);
+                filter: blur(20px);
+            }
+            50% {
+                transform: scale(1.05) rotateX(-5deg);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) rotateX(0);
+                filter: blur(0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 17. EFECTO DE "SEÑAL RADIOACTIVA" EN BOTONES
+function addRadioactiveSignal() {
+    const buttons = document.querySelectorAll('.btn-save, .btn-primary');
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            this.style.animation = 'radioactivePulse 0.6s ease-out';
+            setTimeout(() => {
+                this.style.animation = '';
+            }, 600);
+        });
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes radioactivePulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(124, 106, 247, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(124, 106, 247, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(124, 106, 247, 0);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 18. EFECTO DE "CORTINA DE LUZ" EN TABS
+function addLightCurtainEffect() {
+    const tabs = document.querySelectorAll('.tab');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const rect = this.getBoundingClientRect();
+            const curtain = document.createElement('div');
+            curtain.className = 'light-curtain';
+            curtain.style.cssText = `
+                position: fixed;
+                top: ${rect.top}px;
+                left: ${rect.left}px;
+                width: ${rect.width}px;
+                height: ${rect.height}px;
+                background: radial-gradient(circle, var(--accent2), transparent);
+                border-radius: 50px;
+                pointer-events: none;
+                z-index: 1000;
+                animation: curtainFade 0.5s ease-out forwards;
+            `;
+            document.body.appendChild(curtain);
+            setTimeout(() => curtain.remove(), 500);
+        });
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes curtainFade {
+            0% {
+                opacity: 0.8;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(3);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 19. EFECTO DE "HOLOGRAFÍA 3D" EN TARJETAS DE ESTADÍSTICAS
+function addHologram3DEffect() {
+    const cards = document.querySelectorAll('.stat-card');
+    
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = (y - centerY) / 20;
+            const rotateY = (centerX - x) / 20;
+            
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
+            card.style.transition = 'all 0.1s ease';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+            card.style.transition = 'all 0.3s ease';
+        });
+    });
+}
+
+// 20. EFECTO DE "FONDO NEÓN DINÁMICO"
+function addDynamicNeonBackground() {
+    const style = document.createElement('style');
+    style.textContent = `
+        .bg-anim::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 50px,
+                rgba(124, 106, 247, 0.03) 50px,
+                rgba(124, 106, 247, 0.03) 100px
+            );
+            pointer-events: none;
+            animation: neonShift 10s linear infinite;
+        }
+        @keyframes neonShift {
+            0% { background-position: 0 0; }
+            100% { background-position: 100px 100px; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 21. EFECTO DE "DESTELLO DE ÉXITO" AL GUARDAR
+function addSuccessFlashEffect() {
+    const originalSave = window.saveRecord;
+    window.saveRecord = async function() {
+        const result = await originalSave();
+        
+        const flash = document.createElement('div');
+        flash.className = 'success-flash';
+        flash.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(74, 222, 128, 0.2), transparent);
+            pointer-events: none;
+            z-index: 9999;
+            animation: flashFade 0.5s ease-out forwards;
+        `;
+        document.body.appendChild(flash);
+        setTimeout(() => flash.remove(), 500);
+        
+        return result;
+    };
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes flashFade {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// 22. EFECTO DE "TECLADO CIBERNÉTICO" EN INPUTS
+function addCyberKeyboardEffect() {
+    const inputs = document.querySelectorAll('input, select, textarea');
+    
+    inputs.forEach(input => {
+        input.addEventListener('focus', () => {
+            input.style.boxShadow = '0 0 15px var(--accent2)';
+            input.style.borderColor = 'var(--accent2)';
+            
+            const keyPressSound = new CustomEvent('keyPressGlow', { detail: { element: input } });
+            document.dispatchEvent(keyPressSound);
+        });
+        
+        input.addEventListener('blur', () => {
+            input.style.boxShadow = '';
+            input.style.borderColor = '';
+        });
+        
+        input.addEventListener('keypress', (e) => {
+            const ripple = document.createElement('span');
+            ripple.className = 'key-ripple';
+            ripple.style.cssText = `
+                position: absolute;
+                background: rgba(124, 106, 247, 0.3);
+                border-radius: 50%;
+                pointer-events: none;
+                animation: keyRipple 0.3s ease-out forwards;
+            `;
+            const rect = input.getBoundingClientRect();
+            ripple.style.left = (e.clientX - rect.left) + 'px';
+            ripple.style.top = (e.clientY - rect.top) + 'px';
+            input.style.position = 'relative';
+            input.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 300);
+        });
+    });
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes keyRipple {
+            0% { width: 0; height: 0; opacity: 1; }
+            100% { width: 50px; height: 50px; opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// ============ FUNCIÓN PARA INICIALIZAR TODO ============
+function initMoreFuturisticAnimations() {
+    setTimeout(() => {
+        addFlowingEnergyBorder();
+        addCyberZoomEffect();
+        createMagneticParticles();
+        addLiquidCrystalEffect();
+        addRadioactiveSignal();
+        addLightCurtainEffect();
+        addHologram3DEffect();
+        addDynamicNeonBackground();
+        addSuccessFlashEffect();
+        addCyberKeyboardEffect();
+    }, 800);
+}
+
+// Ejecutar después de las otras animaciones
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMoreFuturisticAnimations);
+} else {
+    initMoreFuturisticAnimations();
+}
