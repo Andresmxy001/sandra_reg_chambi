@@ -30,6 +30,251 @@ let auditListener = null;
 
 window.auditLog = [];
 
+// ============ ANIMACIONES Y EFECTOS VISUALES ============
+
+// Crear partículas flotantes en el fondo
+function createParticles() {
+    const bgAnim = document.querySelector('.bg-anim');
+    if (!bgAnim) return;
+    
+    for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'floating-particle';
+        particle.style.cssText = `
+            position: absolute;
+            width: ${Math.random() * 4 + 2}px;
+            height: ${Math.random() * 4 + 2}px;
+            background: radial-gradient(circle, var(--accent2), transparent);
+            border-radius: 50%;
+            left: ${Math.random() * 100}%;
+            top: ${Math.random() * 100}%;
+            opacity: 0;
+            animation: floatParticle ${Math.random() * 8 + 5}s linear infinite;
+            animation-delay: ${Math.random() * 5}s;
+            pointer-events: none;
+        `;
+        bgAnim.appendChild(particle);
+    }
+}
+
+// Efecto ripple en botones
+function addRippleEffect() {
+    const buttons = document.querySelectorAll('.btn-primary, .btn-save, .tab, .btn-export, .btn-import, .btn-logout');
+    buttons.forEach(btn => {
+        btn.classList.add('btn-ripple');
+        btn.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple-effect';
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            ripple.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.4);
+                transform: scale(0);
+                animation: ripple 0.6s linear;
+                pointer-events: none;
+                left: ${e.clientX - rect.left - size/2}px;
+                top: ${e.clientY - rect.top - size/2}px;
+            `;
+            this.style.position = 'relative';
+            this.style.overflow = 'hidden';
+            this.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        });
+    });
+}
+
+// Animación de conteo para estadísticas
+function animateNumber(element, start, end, duration) {
+    if (!element) return;
+    const range = end - start;
+    const increment = range / (duration / 16);
+    let current = start;
+    const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            clearInterval(timer);
+            current = end;
+        }
+        element.textContent = formatSoles ? formatSoles(current) : Math.round(current);
+    }, 16);
+}
+
+// Actualizar stats con animación
+const originalUpdateStats = updateStats;
+updateStats = function() {
+    const oldTotal = parseInt(document.getElementById('statTotal')?.textContent || '0');
+    const oldMonto = parseFloat(document.getElementById('statMonto')?.textContent?.replace('S/ ', '').replace(/,/g, '') || '0');
+    
+    originalUpdateStats();
+    
+    const newTotal = records.length;
+    const newMonto = records.reduce((sum, r) => sum + (parseFloat(r.monto) || 0), 0);
+    
+    const statTotalEl = document.getElementById('statTotal');
+    const statMontoEl = document.getElementById('statMonto');
+    
+    if (statTotalEl && oldTotal !== newTotal) {
+        animateNumber(statTotalEl, oldTotal, newTotal, 500);
+    }
+    if (statMontoEl && oldMonto !== newMonto) {
+        animateNumber(statMontoEl, oldMonto, newMonto, 500);
+    }
+};
+
+// Efecto de escritura en título
+function typeWriterEffect() {
+    const titles = document.querySelectorAll('.logo-title, .tb-title');
+    titles.forEach(title => {
+        const text = title.textContent;
+        title.style.width = '0';
+        title.style.display = 'inline-block';
+        title.style.overflow = 'hidden';
+        title.style.whiteSpace = 'nowrap';
+        title.classList.add('typing-effect');
+        
+        let i = 0;
+        const typeInterval = setInterval(() => {
+            if (i <= text.length) {
+                title.textContent = text.substring(0, i);
+                i++;
+            } else {
+                clearInterval(typeInterval);
+                title.style.borderRight = 'none';
+            }
+        }, 100);
+    });
+}
+
+// Notificación de nuevo registro
+function showNewRecordNotification() {
+    const statCard = document.querySelector('.stat-card:first-child');
+    if (statCard) {
+        statCard.classList.add('notification-badge');
+        setTimeout(() => statCard.classList.remove('notification-badge'), 500);
+    }
+}
+
+// Sobrescribir saveRecord para añadir animación
+const originalSaveRecord = saveRecord;
+saveRecord = async function() {
+    const btn = event?.target?.closest('.btn-save');
+    if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<div class="loader" style="width:18px;height:18px;border-width:2px"></div> Guardando...';
+        btn.disabled = true;
+        
+        await originalSaveRecord();
+        
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        showNewRecordNotification();
+    } else {
+        await originalSaveRecord();
+        showNewRecordNotification();
+    }
+};
+
+// Efecto de transición entre tabs
+const originalSwitchTab = switchTab;
+switchTab = function(tab) {
+    const currentPanel = document.querySelector('.panel.active');
+    const newPanel = document.getElementById(`panel-${tab}`);
+    
+    if (currentPanel && newPanel && currentPanel !== newPanel) {
+        currentPanel.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+            originalSwitchTab(tab);
+            newPanel.style.animation = 'fadeInScale 0.3s ease-out';
+        }, 150);
+    } else {
+        originalSwitchTab(tab);
+    }
+    
+    // Animación del tab activo
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    const activeTab = document.getElementById(`tab-${tab}`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+        activeTab.style.animation = 'glowPulse 0.5s';
+        setTimeout(() => {
+            if (activeTab.style) activeTab.style.animation = '';
+        }, 500);
+    }
+};
+
+// Efecto hover en filas de tabla
+function addTableRowEffects() {
+    const observer = new MutationObserver(() => {
+        document.querySelectorAll('.data-table tr').forEach(row => {
+            row.addEventListener('mouseenter', function() {
+                this.style.transition = 'all 0.2s ease';
+                this.style.transform = 'scale(1.01)';
+                this.style.backgroundColor = 'var(--glass2)';
+            });
+            row.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+                this.style.backgroundColor = '';
+            });
+        });
+    });
+    
+    observer.observe(document.getElementById('tableBody') || document.body, {
+        childList: true,
+        subtree: true
+    });
+}
+
+// Animación de carga inicial
+function showInitialLoading() {
+    const mainApp = document.getElementById('mainApp');
+    if (mainApp && mainApp.style.display === 'block') {
+        mainApp.classList.add('show');
+        setTimeout(() => mainApp.classList.remove('show'), 500);
+    }
+}
+
+// Inicializar todas las animaciones
+function initAnimations() {
+    createParticles();
+    addRippleEffect();
+    typeWriterEffect();
+    addTableRowEffects();
+    showInitialLoading();
+    
+    // Agregar fadeOut a CSS
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.95); }
+        }
+        .ripple-effect {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            pointer-events: none;
+        }
+        .floating-particle {
+            position: absolute;
+            pointer-events: none;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Ejecutar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAnimations);
+} else {
+    initAnimations();
+}
+
 // Usuarios válidos
 const validUsers = {
     'SANDRA': '77021712',
